@@ -1,0 +1,83 @@
+Backend -> PHP
+Backend Framework -> Node.js
+Frontend -> Typescript
+Frontend Framwork / Toolkit -> Tailwind CSS
+Advanced Graphics -> BabylonJS
+Containerization -> Containerd
+Database -> SQLite
+Blockchain -> Avalanche and Solidity (to store the score of a tournament)
+
+containerd theory:
+it is a rintime of containers, more usefull to manage life of containers more low level than Docker. Docker uses containerd to work
+
+docker:                              containerd:
+more complete                        lighter
+provided by default on CLI           deserves more complex commands
+manages the network, storing...      only manages the execution of containers
+uses containerd inside               work alone or with Kubernetes
+
+first install containerd:
+make a VM
+sudo apt update && sudo apt upgrade -y
+sudo apt install -y curl gnupg2 software-properties-common
+sudo apt install -y containerd
+containerd --version
+sudo systemctl start containerd
+sudo systemctl enable containerd
+
+-------------
+
+download the image Alpine Linux which is light:
+sudo ctr image pull docker.io/library/alpine:latest  //(ctr is like "docker" word)
+
+-------------
+
+create and execute an alpine container:
+sudo ctr run --rm -t docker.io/library/alpine:latest sqlite-container /bin/sh
+
+-------------
+
+install SQLite in the container:
+apk add --no-cache sqlite
+
+----------------
+
+check that SQLite in well installed:
+sqlite3 --version
+
+---------------
+
+execute an sql scripton my host system:
+sqlite3 /data/database.db < /data/init.sql
+
+---------------
+
+check the data in the database:
+sqlite3 /data/database.db "SELECT * FROM users;"
+
+---------------
+
+if necessary, install buildctl:
+sudo apt install buildkit
+
+then build the image:
+buildctl build --frontend=dockerfile.v0 --local context=. --local dockerfile=. --output type=image,name=sqlite-container
+
+-----------------
+
+
+execute the container:
+sudo ctr images import sqlite-container.tar
+
+------------------
+
+launch the container:
+sudo ctr run --rm -t sqlite-container sqlite-instance /bin/sh
+
+-----------------
+
+check the database:
+sqlite3 /data/database.db "SELECT * FROM users;"
+
+
+
