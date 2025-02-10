@@ -79,5 +79,12 @@ sudo ctr run --rm -t sqlite-container sqlite-instance /bin/sh
 check the database:
 sqlite3 /data/database.db "SELECT * FROM users;"
 
-test
 
+installing a VM
+
+sudo apt install -y containerd
+
+sudo systemctl start containerd
+sudo systemctl enable containerd
+
+sudo apt-get install buildkit
