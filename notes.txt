@@ -84,7 +84,14 @@ installing a VM
 
 sudo apt install -y containerd
 
+sudo buildkitd &
 sudo systemctl start containerd
 sudo systemctl enable containerd
 
 sudo apt-get install buildkit
+
+*To open a shell inside a running container (sqlite-instance), use:
+sudo ctr task exec --exec-id shell -t sqlite-instance /bin/sh
+
+
+sudo buildkitd

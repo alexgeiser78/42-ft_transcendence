@@ -1,2 +1,6 @@
-*.vscode
+.vscode
 .env
+*.o
+*.d
+*.tar
+*-container

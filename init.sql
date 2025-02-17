@@ -1,14 +1,14 @@
--- Création d'une table utilisateur
+-- Users database creation
 CREATE TABLE users (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     name TEXT NOT NULL,
     email TEXT UNIQUE NOT NULL
 );
 
--- Ajout de quelques utilisateurs
+-- Add some users
 INSERT INTO users (name, email) VALUES ('Alice', 'alice@example.com');
 INSERT INTO users (name, email) VALUES ('Bob', 'bob@example.com');
 
--- Vérification des données
+-- Check the data
 SELECT * FROM users;
 
