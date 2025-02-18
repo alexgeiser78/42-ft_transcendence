@@ -1,0 +1,43 @@
+# Nom de l'utilisateur à ajouter au groupe containerd
+USER_NAME = alex
+GROUP_NAME = containerd
+
+# Créer le groupe containerd s'il n'existe pas déjà
+create-group:
+	@if ! getent group $(GROUP_NAME) > /dev/null; then \
+		echo "Création du groupe $(GROUP_NAME)..."; \
+		sudo groupadd $(GROUP_NAME); \
+	else \
+		echo "Le groupe $(GROUP_NAME) existe déjà."; \
+	fi
+
+# Ajouter l'utilisateur au groupe containerd
+add-user-to-group:
+	@if id -nG $(USER_NAME) | grep -qw $(GROUP_NAME); then \
+		echo "$(USER_NAME) est déjà dans le groupe $(GROUP_NAME)."; \
+	else \
+		echo "Ajout de $(USER_NAME) au groupe $(GROUP_NAME)..."; \
+		sudo usermod -aG $(GROUP_NAME) $(USER_NAME); \
+	fi
+
+# Appliquer les modifications du groupe (reconnexion de l'utilisateur)
+apply-group-changes:
+	@echo "Déconnexion et reconnexion pour appliquer les changements du groupe $(GROUP_NAME)."
+	@echo "Une fois connecté à nouveau, vous pourrez exécuter containerd sans sudo."
+
+# Afficher le statut des groupes de l'utilisateur
+check-user-groups:
+	@echo "Vérification des groupes de $(USER_NAME)..."
+	id -nG $(USER_NAME)
+
+# Règles par défaut
+setup: create-group add-user-to-group apply-group-changes
+	@echo "Setup complet! Déconnectez-vous et reconnectez-vous pour que les changements prennent effet."
+
+# Vérification : Afficher les groupes de l'utilisateur
+check-groups:
+	@echo "Vérification des groupes de $(USER_NAME) :"
+	id -nG $(USER_NAME)
+
+     	umask 0022
+        chown alex:alex $(TAR_FILE)
