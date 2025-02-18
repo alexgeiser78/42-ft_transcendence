@@ -9,7 +9,7 @@ CONTAINER_NAME = sqlite-instance
 
 # Build an OCI-compliant image using buildctl
 build:
-	buildctl build --frontend=dockerfile.v0 --local context=. --local dockerfile=. --output type=tar,dest=$(TAR_FILE)
+	buildctl build --frontend=dockerfile.v0 --local context=. --local dockerfile=. --output type=oci,dest=$(TAR_FILE)
 
 # Export the image as a tar file
 # Rename the built image to a tar file
@@ -19,10 +19,15 @@ export-image: build
 # Import the image into containerd
 import-image: export-image
 	ctr images import $(TAR_FILE)
+	@echo "Liste des images importées :"
+	ctr images ls
 
 # Run the container with a persistent volume
 # Start a container using containerd with a mounted volume
 run:
+	@echo "Lancement du conteneur avec l'image $(IMAGE_NAME)..."
+	ctr images ls
+	ctr volume ls
 	ctr run --rm -t \
             --mount type=volume,source=$(VOLUME_NAME),destination=/data \
             $(IMAGE_NAME) $(CONTAINER_NAME) /bin/sh
@@ -57,7 +62,7 @@ fclean: stop-container remove-volume remove-image clean
 all: create-volume run
 
 # Rebuild: Remove everything, rebuild, and restart the container
-re: clean-all build import-image create-volume run
+re: fclean build import-image create-volume run
 
 # Display the list of images in containerd
 imagecheck:
@@ -66,19 +71,19 @@ imagecheck:
 # Help: Display the list of available rules
 help:
 	@echo "Rules available:"
-	@echo "  build: Building the image with buildctl"
-	@echo "  export-image: Export the image with tar"
-	@echo "  import-image: Import the image in containerd"
-	@echo "  run: run the  containerd with a persistant volume"
-	@echo "  stop-container: Stop and delete the container"
-	@echo "  remove-volume: Delete the persistant volume"
-	@echo "  remove-image: Delete the imported image"
-	@echo "  clean: destroy the temporary files"
-	@echo "  create-volume: Create a volume for the persistant data storage"
-	@echo "  fclean: Stop everything and delete (container, volume, image, and temporary files)"
-	@echo "  all: Create the volume and start the container"
-	@echo "  re: Delete everything, rebuild, and restart the container"
-	@echo "  help: Print the list of available rules"
-	@echo "  imagecheck: check the list of images in containerd"
+	@echo "build: Building the image with buildctl"
+	@echo "export-image: Export the image with tar"
+	@echo "import-image: Import the image in containerd"
+	@echo "run: run the  containerd with a persistant volume"
+	@echo "stop-container: Stop and delete the container"
+	@echo "remove-volume: Delete the persistant volume"
+	@echo "remove-image: Delete the imported image"
+	@echo "clean: destroy the temporary files"
+	@echo "create-volume: Create a volume for the persistant data storage"
+	@echo "fclean: Stop everything and delete (container, volume, image, and temporary files)"
+	@echo "all: Create the volume and start the container"
+	@echo "re: Delete everything, rebuild, and restart the container"
+	@echo "help: Print the list of available rules"
+	@echo "imagecheck: check the list of images in containerd"
 
 .PHONY: create-group add-user-to-group apply-group-changes check-user-groups setup check-groups build export-image import-image run stop-container remove-volume remove-image clean create-volume fclean all re imagecheck help

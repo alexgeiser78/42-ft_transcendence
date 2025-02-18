@@ -8,7 +8,7 @@ Database -> SQLite
 Blockchain -> Avalanche and Solidity (to store the score of a tournament)
 
 containerd theory:
-it is a rintime of containers, more usefull to manage life of containers more low level than Docker. Docker uses containerd to work
+it is a runtime of containers, more usefull to manage life of containers more low level than Docker. Docker uses containerd to work
 
 docker:                              containerd:
 more complete                        lighter
