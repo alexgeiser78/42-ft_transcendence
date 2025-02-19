@@ -18,9 +18,11 @@ export-image: build
 # Import the image into containerd with base-name for correct naming
 import-image: export-image
 	@echo "Importing image into containerd..."
-	sudo ctr images import --base-name $(IMAGE_NAME):latest $(TAR_FILE)
+	sudo ctr images import --base-name $(IMAGE_NAME) $(TAR_FILE)
+	sudo chown alex:alex sqlite-container.tar
 	@echo "Liste des images importées :"
-	ctr images ls
+	sudo ctr images ls
+
 
 # Create volume directory
 create-volume-dir:
@@ -29,7 +31,7 @@ create-volume-dir:
 	sudo chown 777 $(VOLUME_NAME)
 
 # Run the container
-run: create-volume-dir
+run:
 	@echo "Lancement du conteneur avec l'image $(IMAGE_NAME):latest..."
 	sudo ctr run --rm -t \
 		--mount type=bind,src=$(VOLUME_NAME),dst=/data \
@@ -79,3 +81,4 @@ help:
 	@echo "  fclean        - Tout supprimer (container, image, fichiers)"
 	@echo "  imagecheck    - Vérifier les images dans containerd"
 	@echo "  help          - Afficher cette aide"
+	@echo "  re			   - Tout reconstruire"
