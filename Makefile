@@ -27,7 +27,7 @@ import-image: export-image
 create-volume-dir:
 	@echo "Creating volume directory $(VOLUME_NAME) if it doesn't exist..."
 	@mkdir -p $(VOLUME_NAME)
-	sudo chown 777 $(VOLUME_NAME)
+	sudo chown -R alex:alex $(VOLUME_NAME)
 
 # Run the container
 run: create-volume-dir
@@ -46,7 +46,8 @@ stop-container:
 remove-image:
 	@echo "Suppression de l'image $(IMAGE_NAME):latest..."
 	sudo ctr images rm $(IMAGE_NAME):latest || echo "Image $(IMAGE_NAME) not found"
-
+	sudo ctr images ls -q | xargs -r sudo ctr images rm
+	
 # Clean temporary files
 clean:
 	@echo "Nettoyage des fichiers temporaires..."

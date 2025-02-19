@@ -1,21 +1,17 @@
-# iso image
+# Utiliser l'image alpine
 FROM alpine:latest  
 
-# install sqlite
+# Installer sqlite
 RUN apk add --no-cache sqlite  
 
-# file directory
+# Définir le répertoire de travail
 WORKDIR /data  
 
-# Script copy image to container
+# Copier le fichier init.sql dans le conteneur
 COPY init.sql /data/init.sql  
 
-# Verifier que /data existe et que init.sql est bien copié
+# Vérifier que /data existe et que init.sql est bien copié
 RUN echo "Vérification de /data" && ls -l /data
 
-
-
-# Execute the script to create the database
+# Exécuter le script pour créer la base de données
 CMD ["sh", "-c", "sqlite3 /data/database.db < /data/init.sql && tail -f /dev/null"]
-
-RUN ls -l /data
