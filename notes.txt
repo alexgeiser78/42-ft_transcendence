@@ -97,3 +97,5 @@ sudo ctr task exec --exec-id shell -t sqlite-instance /bin/sh
 sudo buildkitd
 
 miracle: sudo ctr images import --base-name sqlite-container --digests --all-platforms sqlite-container.tar
+
+remove image: sudo ctr images ls -q | xargs -r sudo ctr images rm
