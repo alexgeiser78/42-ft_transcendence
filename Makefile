@@ -1,85 +1,81 @@
 # Variables
 IMAGE_NAME = sqlite-container
 TAR_FILE = $(IMAGE_NAME).tar
-VOLUME_NAME = /home/alex/42/trans/sqlite-data
+VOLUME_NAME = /home/ageiser/sgoinfre/supertrans/sqlite-data
 CONTAINER_NAME = sqlite-instance
 
-# Build an OCI-compliant image
+# Construire l'image avec BuildKit
 build:
 	@echo "Building the image..."
-	sudo buildctl build --frontend=dockerfile.v0 --local context=. --local dockerfile=. --output type=oci,dest=$(TAR_FILE) --no-cache
-	sudo chown $(USER):$(USER) $(TAR_FILE)  # Assure que le fichier appartient à l'utilisateur
+	buildctl --addr unix:///home/ageiser/.buildkit/test.sock build --frontend=dockerfile.v0 --local context=. --local dockerfile=. --output type=oci,dest=$(TAR_FILE) --no-cache
 
-# Export the image as a tar file
+# Exporter l'image (l'image est déjà construite dans TAR_FILE)
 export-image: build
-	@echo "Image exportée sous le nom $(TAR_FILE)"
+	@echo "Image exported to $(TAR_FILE)"
 
-# Import the image into containerd and tag it
+# Importer l'image dans containerd en mode rootless avec un tag explicite
 import-image: export-image
 	@echo "Importing image into containerd..."
-	sudo ctr images import --base-name $(IMAGE_NAME) --digests --all-platforms $(TAR_FILE)
-	@echo "Tagging image as $(IMAGE_NAME):latest..."
-	sudo ctr images tag $$(sudo ctr images ls -q | grep "$(IMAGE_NAME)@sha256") $(IMAGE_NAME):latest
-	@echo "Liste des images après import :"
-	sudo ctr images ls
+	ctr --address /home/ageiser/.containerd/containerd.sock images import $(TAR_FILE)
+	@echo "Image imported into containerd"
+	@echo "Tagging image as latest..."
+	ctr --address /home/ageiser/.containerd/containerd.sock images tag $(IMAGE_NAME):latest $(IMAGE_NAME):latest
 
-# Create volume directory
+# Créer le volume (un répertoire local en tant que volume)
 create-volume-dir:
 	@echo "Creating volume directory $(VOLUME_NAME) if it doesn't exist..."
-	@mkdir -p $(VOLUME_NAME)
-	sudo chown -R alex:alex $(VOLUME_NAME)
+	mkdir -p $(VOLUME_NAME)
 
-# Run the container
-run: create-volume-dir
-	@echo "Lancement du conteneur avec l'image $(IMAGE_NAME):latest..."
-	sudo ctr run --rm -t \
-		--mount type=bind,src=$(VOLUME_NAME),dst=/data \
-		$(IMAGE_NAME):latest $(CONTAINER_NAME) /bin/sh
+# Lancer le conteneur avec containerd (ou compatible avec OCI)
+run: create-volume-dir import-image
+	@echo "Running the container with containerd..."
+	ctr --address /home/ageiser/.containerd/containerd.sock run --rm --net-host --mount type=bind,source=$(VOLUME_NAME),target=/data $(IMAGE_NAME):latest $(CONTAINER_NAME) /bin/sh -c "echo 'Container started' && tail -f /dev/null"
+	@echo "Container running with containerd."
 
-# Stop container
+# Arrêter et supprimer le conteneur
+# Arrêter et supprimer le conteneur
 stop-container:
-	@echo "Arrêt du conteneur $(CONTAINER_NAME)..."
-	sudo ctr task kill $(CONTAINER_NAME) || echo "Container $(CONTAINER_NAME) not found or already stopped"
-	sudo ctr containers rm $(CONTAINER_NAME) || echo "Container $(CONTAINER_NAME) not found"
+	@echo "Stopping container $(CONTAINER_NAME)..."
+	ctr --address /home/ageiser/.containerd/containerd.sock task kill $(CONTAINER_NAME)
+	ctr --address /home/ageiser/.containerd/containerd.sock container rm $(CONTAINER_NAME)
+	@echo "Container stopped and removed."
 
-# Remove image
+# Supprimer l'image construite
 remove-image:
-	@echo "Suppression de l'image $(IMAGE_NAME):latest..."
-	sudo ctr images rm $(IMAGE_NAME):latest || echo "Image $(IMAGE_NAME) not found"
-	sudo ctr images ls -q | xargs -r sudo ctr images rm
-	
-# Clean temporary files
+	@echo "Removing image $(IMAGE_NAME):latest..."
+	ctr --address /home/ageiser/.containerd/containerd.sock images rm $(IMAGE_NAME):latest
+	@echo "Image removed."
+
+# Nettoyage des fichiers temporaires
 clean:
-	@echo "Nettoyage des fichiers temporaires..."
+	@echo "Cleaning temporary files..."
 	rm -f $(TAR_FILE)
 
-# Full cleanup
+# Tout nettoyer (conteneur, image, fichiers temporaires)
 fclean: stop-container remove-image clean
 	rm -rf $(VOLUME_NAME)
 
-# Default rule
-all: run
-
-# Rebuild everything
-re: fclean build import-image run
-
-# Check images
+# Vérifier les images disponibles dans containerd (ou autre moteur)
 imagecheck:
-	@echo "Liste des images dans containerd :"
-	sudo ctr images ls
+	@echo "Listing images in containerd..."
+	ctr --address /home/ageiser/.containerd/containerd.sock images ls
+	@echo "Image list displayed."
 
-# Help
+
+# Aide
 help:
-	@echo "Commandes disponibles :"
-	@echo "  build         - Construire l'image avec buildctl"
-	@echo "  export-image  - Exporter l'image au format tar"
-	@echo "  import-image  - Importer l'image dans containerd et tagger correctement"
-	@echo "  run           - Lancer le conteneur"
-	@echo "  stop-container - Arrêter et supprimer le conteneur"
-	@echo "  remove-image  - Supprimer l'image"
-	@echo "  clean         - Nettoyer les fichiers temporaires"
-	@echo "  fclean        - Tout supprimer (container, image, fichiers)"
-	@echo "  imagecheck    - Vérifier les images dans containerd"
-	@echo "  help          - Afficher cette aide"
-	@echo "  re            - Tout reconstruire"
+	@echo "Available commands:"
+	@echo "  build         - Build the image with BuildKit"
+	@echo "  export-image  - Export the built image"
+	@echo "  import-image  - Import the image into containerd"
+	@echo "  run           - Run the container with BuildKit"
+	@echo "  stop-container - Stop and remove the container"
+	@echo "  remove-image  - Remove the built image"
+	@echo "  clean         - Clean temporary files"
+	@echo "  fclean        - Clean everything (container, image, files)"
+	@echo "  imagecheck    - List images in containerd"
+	@echo "  help          - Display this help"
+	@echo "  re            - Rebuild everything"
 
+# Reconstruire tout (nettoyer, construire l'image, importer, et lancer)
+re: fclean build import-image run
