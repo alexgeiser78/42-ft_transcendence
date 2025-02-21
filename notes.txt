@@ -111,3 +111,5 @@ killall buildkitd
 
 buildkit: rootlesskit --net=slirp4netns --disable-host-loopback buildkitd --addr unix:///home/ageiser/.buildkit/test.sock --root /home/ageiser/.buildkitd
 containerd: rootlesskit --net=slirp4netns --disable-host-loopback containerd --address /home/ageiser/.containerd/containerd.sock
+
+test
