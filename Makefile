@@ -1,85 +1,87 @@
-# Variables
-IMAGE_NAME = sqlite-container
-TAR_FILE = $(IMAGE_NAME).tar
-VOLUME_NAME = /home/ageiser/sgoinfre/supertrans/sqlite-data
-CONTAINER_NAME = sqlite-instance
+# Docker Image Name
+IMAGE_NAME = fastify-sqlite
 
-# Building the image with buildkit and rootless
+# Port used for the app
+PORT = 3000
+
+# cathe the name of the user
+USER = $(shell whoami)
+
+# Directory for the SQLite database
+DB_DIR = /home/$(USER)/sgoinfre/supertrans
+
+# Path to the SQLite database
+DB_PATH = $(DB_DIR)/database.sqlite
+
+# build the docker image
 build:
-	@echo "Building the image..."
-	buildctl --addr unix:///home/ageiser/.buildkit/test.sock build --frontend=dockerfile.v0 --local context=. --local dockerfile=. --output type=oci,dest=$(TAR_FILE) --no-cache
+	docker build -t $(IMAGE_NAME) .
 
-# Import the image in containerd in rootless mode with an explicite tag
-import-image:
-	@echo "Importing image into containerd..."
-	ctr --address /home/ageiser/.containerd/containerd.sock images import --base-name $(IMAGE_NAME) --digests --all-platforms $(TAR_FILE)
-	@echo "Tagging image as $(IMAGE_NAME):latest..."
-	ctr --address /home/ageiser/.containerd/containerd.sock images tag $$(ctr --address /home/ageiser/.containerd/containerd.sock images ls -q | grep "$(IMAGE_NAME)@sha256") $(IMAGE_NAME):latest
-	@echo "Images list after import :"
-	ctr --address /home/ageiser/.containerd/containerd.sock images ls
+# start the container
+run:
+	# Create the database file if it doesn't exist
+	[ -f $(DB_PATH) ] || touch $(DB_PATH)
 
-# Exporting the image inot a .tar file
-export-image:
-	@echo "Exporting the image..."
-	ctr --address /home/ageiser/.containerd/containerd.sock images export sqlite-container.tar $(IMAGE_NAME):latest
-	@echo "Image exported to sqlite-container.tar"
+	# Set proper permissions on the SQLite file
+	chmod 666 $(DB_PATH)
 
-# Créer le volume (un répertoire local en tant que volume)
-create-volume-dir:
-	@echo "Creating volume directory $(VOLUME_NAME) if it doesn't exist..."
-	mkdir -p $(VOLUME_NAME)
-	chown ageiser:2022_barcelona /home/ageiser/sgoinfre/supertrans/sqlite-data
+	# Run the container
+	docker run -p $(PORT):$(PORT) -v $(DB_PATH):/app/database.sqlite $(IMAGE_NAME)
 
-# Lancer le conteneur avec containerd (ou compatible avec OCI)
-run: create-volume-dir
-	@echo "Running the container with containerd..."
-	ctr --address /home/ageiser/.containerd/containerd.sock run --rm --net-host --mount type=bind,source=$(VOLUME_NAME),destination=/data sqlite-container:latest sqlite-instance /bin/sh -c "echo 'Container started' && tail -f /dev/null"
-	@echo "Container running with containerd."
+# Start the docker-compose
+compose-up:
+	docker-compose up --build -d
 
-# Arrêter et supprimer le conteneur
-# Arrêter et supprimer le conteneur
-stop-container:
-	@echo "Stopping container $(CONTAINER_NAME)..."
-	-ctr --address /home/ageiser/.containerd/containerd.sock task kill $(CONTAINER_NAME)
-	-ctr --address /home/ageiser/.containerd/containerd.sock tasks rm $(CONTAINER_NAME)
-	@echo "Container stopped and removed."
+# Stop the docker-compose
+compose-down:
+	docker-compose down
 
-# Supprimer l'image construite
-remove-image:
-	@echo "Removing image $(IMAGE_NAME):latest..."
-	ctr --address /home/ageiser/.containerd/containerd.sock images rm $(IMAGE_NAME):latest
-	@echo "Image removed."
-
-# Nettoyage des fichiers temporaires
+# clean the container and the used images
 clean:
-	@echo "Cleaning temporary files..."
-	rm -f $(TAR_FILE)
+	docker system prune -f
 
-# Tout nettoyer (conteneur, image, fichiers temporaires)
-fclean: stop-container remove-image clean
-	rm -rf $(VOLUME_NAME)
+# fclean command to remove the database.sqlite file
+fclean: clean
+	@read -p "Are you sure you want to delete the database.sqlite file and its contents? (y/n): " confirm; \
+	if [ "$$confirm" = "y" ]; then \
+		rm -f $(DB_PATH); \
+		echo "Database file deleted."; \
+	else \
+		echo "Operation canceled."; \
+	fi
 
-# Vérifier les images disponibles dans containerd (ou autre moteur)
-imagecheck:
-	@echo "Listing images in containerd..."
-	ctr --address /home/ageiser/.containerd/containerd.sock images ls
-	@echo "Image list displayed."
+# Print the logs of the container
+logs:
+	docker-compose logs -f
 
+# stop the container
+stop:
+	@container_id=$(shell docker ps -q -f "ancestor=$(IMAGE_NAME)") && \
+	if [ -n "$$container_id" ]; then \
+		docker stop $$container_id; \
+	else \
+		echo "No running container found for $(IMAGE_NAME)"; \
+	fi
 
-# Aide
+# Remove the docker image
+remove:
+	docker rm $(shell docker ps -aq -f "ancestor=$(IMAGE_NAME)")
+
+# Create the database directory if necessary
+re: stop clean build run
+
+list:
+	docker ps -a
+
+# disponible commands
 help:
 	@echo "Available commands:"
-	@echo "  build         - Build the image with BuildKit in Rootless mode"
-	@echo "  import-image  - Import the image into containerd"
-	@echo "  export-image  - Export the built image"
-	@echo "  run           - Run the container with BuildKit"
-	@echo "  stop-container - Stop and remove the container"
-	@echo "  remove-image  - Remove the built image"
-	@echo "  clean         - Clean temporary files"
-	@echo "  fclean        - Clean everything (container, image, files)"
-	@echo "  imagecheck    - List images in containerd"
-	@echo "  help          - Display this help"
-	@echo "  re            - Rebuild everything"
-
-# Reconstruire tout (nettoyer, construire l'image, importer, et lancer)
-re:  build import-image export-image run re imagecheck clean fclean
+	@echo "  make build         → Build the Docker Image"
+	@echo "  make run           → Execute the Docker container"
+	@echo "  make compose-up    → Start with Docker-compose"
+	@echo "  make compose-down  → Stop with Docker-compose"
+	@echo "  make clean         → Clean the used containers"
+	@echo "  make logs          → Print the logs"
+	@echo "  make remove        → Delete the Docker Image"
+	@echo "  make re            → Full reload"
+	@echo "  make list          → List of the Images"

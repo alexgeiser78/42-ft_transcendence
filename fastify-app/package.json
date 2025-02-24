@@ -1,0 +1,17 @@
+{
+  "name": "fastify-app",
+  "version": "1.0.0",
+  "description": "Fastify app with SQLite database",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [],
+  "author": "Alex",
+  "license": "MIT",
+  "dependencies": {
+    "fastify": "^5.2.1",
+    "sqlite3": "^5.0.0",
+    "bcrypt": "^5.1.2" 
+  }
+}

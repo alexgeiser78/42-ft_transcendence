@@ -1,17 +1,20 @@
-# Utiliser l'image alpine
-FROM alpine:latest  
+#Using an official Node.js image
+FROM node:18
 
-# Installer sqlite
-RUN apk add --no-cache sqlite  
+# Definition of the working directory
+WORKDIR /app
 
-# Définir le répertoire de travail
-WORKDIR /data  
+# Copy the files package.json and package-lock.json
+COPY ./fastify-app/package*.json ./fastify-app/
 
-# Copier le fichier init.sql dans le conteneur
-COPY init.sql /data/init.sql  
+# Install the dependencies
+RUN npm install --prefix ./fastify-app
 
-# Vérifier que /data existe et que init.sql est bien copié
-RUN echo "Vérification de /data" && ls -l /data
+# Copy the source code
+COPY ./fastify-app/ ./fastify-app/
 
-# Exécuter le script pour créer la base de données
-CMD ["sh", "-c", "sqlite3 /data/database.db < /data/init.sql && tail -f /dev/null"]
+# Exposing the port used by Fastify
+EXPOSE 3000
+
+# Start the app
+CMD ["node", "./fastify-app/index.js"]

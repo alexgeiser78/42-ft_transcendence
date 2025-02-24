@@ -1,0 +1,12 @@
+#version: '3.8'
+
+services:
+  app:
+    build: . # construct the image from Dockerfile
+    ports:
+      - "3000:3000" #expose the port
+    volumes:
+      - .:/app #mounting the local folder in the container
+    environment:
+      - NODE_ENV=production # environnment variable
+    command: ["node", "index.js"]

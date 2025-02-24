@@ -104,3 +104,26 @@ remove image: sudo ctr images ls -q | xargs -r sudo ctr images rm
 
 buildkit: rootlesskit --net=slirp4netns --disable-host-loopback buildkitd --addr unix:///home/ageiser/.buildkit/test.sock --root /home/ageiser/.buildkitd
 containerd: rootlesskit --net=slirp4netns --disable-host-loopback containerd --address /home/ageiser/.containerd/containerd.sock --root /home/ageiser/.containerd
+
+/------------------------------/
+
+Fastify & Node.js Basics
+
+Fastify is a high-performance web framework for Node.js that is optimized for speed and low overhead. It is designed to be lightweight, efficient, and developer-friendly, making it a great choice for building backend applications.
+
+mkdir fastify-app
+cd fastify-app
+npm init -y
+
+npm install fastify
+
+install nvm 18: 
+curl -fsSL https://raw.githubusercontent.com/nvm-sh/nvm/v0.39.5/install.sh | bash
+restart terminal
+nvm install 18
+nvm use 18
+nvm alias default 18
+
+make build
+make run
+
