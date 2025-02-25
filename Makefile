@@ -4,7 +4,7 @@ IMAGE_NAME = fastify-sqlite
 # Port used for the app
 PORT = 3000
 
-# cathe the name of the user
+# catch the name of the OS user
 USER = $(shell whoami)
 
 # Directory for the SQLite database
@@ -85,3 +85,4 @@ help:
 	@echo "  make remove        → Delete the Docker Image"
 	@echo "  make re            → Full reload"
 	@echo "  make list          → List of the Images"
+	
