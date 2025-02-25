@@ -12,6 +12,6 @@
   "dependencies": {
     "fastify": "^5.2.1",
     "sqlite3": "^5.0.0",
-    "bcrypt": "^5.1.2" 
+    "bcrypt": "^5.1.0" 
   }
 }

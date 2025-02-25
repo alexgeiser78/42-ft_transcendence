@@ -26,7 +26,10 @@ run:
 	chmod 666 $(DB_PATH)
 
 	# Run the container
-	docker run -p $(PORT):$(PORT) -v $(DB_PATH):/app/database.sqlite $(IMAGE_NAME)
+	docker network create --driver bridge custom_network
+	docker run --rm -it --network custom_network -p $(PORT):$(PORT) -v $(DB_PATH):/app/database.sqlite $(IMAGE_NAME)
+
+
 
 # Start the docker-compose
 compose-up:
@@ -41,7 +44,7 @@ clean:
 	docker system prune -f
 
 # fclean command to remove the database.sqlite file
-fclean: clean
+fclean: stop clean
 	@read -p "Are you sure you want to delete the database.sqlite file and its contents? (y/n): " confirm; \
 	if [ "$$confirm" = "y" ]; then \
 		rm -f $(DB_PATH); \
@@ -68,7 +71,7 @@ remove:
 	docker rm $(shell docker ps -aq -f "ancestor=$(IMAGE_NAME)")
 
 # Create the database directory if necessary
-re: stop clean build run
+re: stop fclean build run
 
 list:
 	docker ps -a
